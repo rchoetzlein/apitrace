@@ -346,6 +346,31 @@ For example, to record all profiling data and utilise the per shader script:
 
     apitrace replay --pgpu --pcpu --ppd foo.trace | ./scripts/profileshader.py
 
+State tracking with NVIDIA StateViewer 
+======================================
+The new state tracking feature, by NVIDIA, provides deep traces of calls 
+according to graphics state bins. 
+
+To see an overview of this new feature, look at the powerpoint slides 
+found in the StateViewer github here:
+  https://github.com/rchoetzlein/stateviewer
+  
+State tracking consists of three steps:
+1) Perform a trace normally using apitrace
+2) Perform state tracking using d3dretrace/glretrace with the new -r or -t option.
+3) Visualize the state tracking data using the StateViewer (at the github above)
+
+Options added to Apitrace:
+* d3d/glretrace -r   Perform NVIDIA State tracking, with output to .raw (binary) file
+* d3d/glretrace -t   Perform NVIDIA State tracking, with output to .txt file
+* d3d/glretrace -o   Specify output filename for .raw or .txt
+* d3d/glretrace -f {frame}  Start state tracking after the specified {frame}
+
+Visualization of Raw files:
+* stateview {file}.raw
+
+Questions and comments: rhoetzlein@nvidia.com
+
 
 Advanced usage for OpenGL implementors
 ======================================
