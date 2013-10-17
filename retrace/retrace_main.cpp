@@ -43,6 +43,9 @@
 #include "trace_option.hpp"
 #include "retrace.hpp"
 
+extern void createBins (void);		// from retrace_swizzle.hpp
+extern void resetBins (void);		// from retrace_swizzle.hpp
+
 
 static bool waitOnFinish = false;
 static bool loopOnFinish = false;
@@ -63,10 +66,12 @@ retrace::Retracer retracer;
 
 namespace retrace {
 
-
 trace::Parser parser;
 trace::Profiler profiler;
 
+bool stateTraceRaw = false;
+bool stateTraceTxt = false;
+std::string stateTraceFile = "";
 
 int verbosity = 0;
 bool debug = true;
@@ -320,6 +325,7 @@ public:
                 callEndsFrame = true;
                 parser.getBookmark(frameStart);
             }
+			//printf ( "call: %d\n", call->no );
 
             retraceCall(call);
             delete call;
@@ -563,6 +569,10 @@ usage(const char *argv0) {
         "  -s, --snapshot-prefix=PREFIX    take snapshots; `-` for PNM stdout output\n"
         "      --snapshot-format=FMT       use (PNM or RGB; default is PNM) when writing to stdout output\n"
         "  -S, --snapshot=CALLSET  calls to snapshot (default is every frame)\n"
+		"  -r, --states-raw        2-pass state tracing to raw output (for vis)\n";
+	    "  -t, --states-txt        2-pass state tracing to txt output\n";
+		"  -f, --states-frame=n    2-pass state tracing, specify starting frame\n"
+		"  -o, --states-out=FILE   2-pass state tracing, specify output filename (no ext)\n"		
         "  -v, --verbose           increase output verbosity\n"
         "  -D, --dump-state=CALL   dump state at specific call no\n"
         "  -w, --wait              waitOnFinish on final frame\n"
@@ -586,7 +596,7 @@ enum {
 };
 
 const static char *
-shortOptions = "bD:hs:S:vw";
+shortOptions = "bD:hs:S:vw:trf:o:";
 
 const static struct option
 longOptions[] = {
@@ -609,6 +619,10 @@ longOptions[] = {
     {"wait", no_argument, 0, 'w'},
     {"loop", no_argument, 0, LOOP_OPT},
     {"singlethread", no_argument, 0, SINGLETHREAD_OPT},
+	{"states-txt", no_argument, 0, 't' },
+	{"states-raw", no_argument, 0, 'r' },	
+	{"states-frame", required_argument, 0, 'f' },
+	{"states-out", required_argument, 0, 'o' },
     {0, 0, 0, 0}
 };
 
@@ -637,6 +651,20 @@ int main(int argc, char **argv)
             retrace::debug = false;
             retrace::verbosity = -1;
             break;
+		case 'x':
+
+		case 'r':
+			retrace::stateTraceRaw = true;			
+			break;
+		case 't':
+			retrace::stateTraceTxt = true;			
+			break;
+		case 'f':
+			g_startframe = atoi(optarg);
+			break;
+		case 'o':
+			retrace::stateTraceFile = optarg;
+			break;
         case CALL_NOS_OPT:
             useCallNos = trace::boolOption(optarg);
             break;
@@ -767,15 +795,39 @@ int main(int argc, char **argv)
 
     os::setExceptionCallback(exceptionCallback);
 
-    for (i = optind; i < argc; ++i) {
-        if (!retrace::parser.open(argv[i])) {
-            return 1;
-        }
+    if ( retrace::stateTraceRaw || retrace::stateTraceTxt ) {
 
-        retrace::mainLoop();
+		// Create state tracking files
+		if ( g_fp == 0x0 ) {
+			char fname[512];
+			if ( stateTraceFile.length() == 0 ) stateTraceFile = argv[ optind ];
+			sprintf ( fname, "%s.txt", stateTraceFile.c_str() );			
+			if ( retrace::stateTraceTxt ) g_fp = fopen ( fname, "wt" );
+			sprintf ( fname, "%s.raw", stateTraceFile.c_str() );
+			if ( retrace::stateTraceRaw ) g_fp2 = fopen ( fname, "wb" );
+		}	
+	
+		// 2-pass method for State-Change Tracking
+		
+		createBins ();
+		for (g_pass = 1; g_pass <= 2; g_pass++ ) {
+			resetBins ();
+			for (i = optind; i < argc; ++i) {		
+				if (!retrace::parser.open(argv[i])) return 1;			
+				retrace::mainLoop();
+				retrace::parser.close();
+			}
+		}
 
-        retrace::parser.close();
-    }
+	} else {
+
+		// Standard. 1-pass Retrace.
+		for (i = optind; i < argc; ++i) {
+			if (!retrace::parser.open(argv[i])) return 1;			
+			retrace::mainLoop();
+			retrace::parser.close();
+		}
+	}
     
     os::resetExceptionCallback();
 

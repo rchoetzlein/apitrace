@@ -120,5 +120,64 @@ toObjPointer(trace::Call &call, trace::Value &value);
 
 } /* namespace retrace */
 
+
+//----------- RAMA
+// State sorting
+
+#define BIN_UNDEF		0
+#define BIN_CREATE		1
+#define BIN_UPDATE		2
+#define BIN_SWITCH		3
+#define BIN_NOCHANGE	4
+
+#define BIN_SHADER		0
+#define BIN_RENDER		1
+#define BIN_VIEWPORT	2
+#define BIN_RASTER		3
+#define BIN_DEPTH		4
+#define BIN_BLEND		5
+#define BIN_SAMPLER		6
+#define BIN_INPUT		7
+#define BIN_TEXTURE		8
+#define BIN_VERTEX0		9		// IA slot 0
+#define BIN_VERTEX1		10		// IA slot 1 ..
+#define BIN_VERTEX2		11
+#define BIN_VERTEX3		12
+#define BIN_VERTEX4		13	
+#define BIN_VSCONST0	14
+#define BIN_VSCONST1	15
+#define BIN_VSCONST2	16
+#define BIN_VSCONST3	17
+#define BIN_VSCONST4	18
+#define BIN_PSCONST0	19
+#define BIN_PSCONST1	20
+#define BIN_PSCONST2	21
+#define BIN_PSCONST3	22
+#define BIN_PSCONST4	23
+#define BIN_INDEX		24
+#define NUM_BIN			25
+
+#define BIN_DRAW		25
+#define BIN_PRESENT		26
+
+#define BIN_UNKNOWN		250
+
+
+extern std::map<void *, void *> _maps;
+extern std::map< void*, unsigned long long >	_revmaps;			// Locked addresses reverse lookup
+
+void createBins ();
+void assignToBin ( unsigned long long ptr, int bin_id );
+void setPtrHashID ( unsigned long long ptr, int id );
+int getBin ( unsigned long long ptr );
+int mapToHash ( trace::Value& value, int bin_id );
+void getStates ( std::vector<int>& ivec );
+unsigned long long getLockedPtr ( void* dat );
+
+void stateCall ( trace::Call& call );
+void stateSort ( int create_type, char* name, int nameID, int bin, unsigned long long obj_ptr, unsigned long long dat_ptr, void* dat, int size );
+
+
+
 #endif /* _RETRACE_SWIZZLE_HPP_ */
 

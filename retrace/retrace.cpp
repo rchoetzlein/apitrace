@@ -30,6 +30,22 @@
 #include "os_time.hpp"
 #include "retrace.hpp"
 
+// RAMA
+//
+// Added to retrace.cpp
+
+int		frame = 0;
+bool	g_statesort = true;
+int		g_startframe = 0;
+FILE*	g_fp = 0x0;
+FILE*	g_fp2 = 0x0;
+char	g_buf[2048];
+int		g_pass = 1;
+int		cDraw = 0;
+int		cDrawNdx = 0;
+
+extern void stateCall ( trace::Call& call );
+
 
 namespace retrace {
 
@@ -116,7 +132,15 @@ void Retracer::retrace(trace::Call &call) {
         }
     }
 
-    callback(call);
+	//if ( call.no < 2230 || call.no > 2240 ) {
+    
+	callback(call);
+
+	// RAMA
+	if ( frameNo >= g_startframe && (retrace::stateTraceRaw || retrace::stateTraceTxt) )
+		stateCall(call);	
+	
+	//}	
 }
 
 

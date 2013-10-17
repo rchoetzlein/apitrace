@@ -47,6 +47,12 @@ namespace image {
     class Image;
 }
 
+extern bool		g_statesort;	// state sorting on/off
+extern FILE*	g_fp;			// global file output
+extern FILE*    g_fp2;
+extern char		g_buf[2048];
+extern int		g_pass;
+extern int		g_startframe;
 
 namespace retrace {
 
@@ -82,6 +88,13 @@ public:
  * Output verbosity when retracing files.
  */
 extern int verbosity;
+
+/**
+ * State Tracing
+ */
+extern bool stateTraceRaw;
+extern bool stateTraceTxt;
+extern std::string stateTraceFile;
 
 /**
  * Debugging checks.
